@@ -1,0 +1,34 @@
+[Unit]
+Description=Ceph RGW
+After=docker.service
+
+[Service]
+EnvironmentFile=/var/lib/ceph/radosgw/ceph-%i/EnvironmentFile
+ExecStartPre=-/usr/bin/docker stop ceph-rgw-cephqa07-${INST_NAME}
+ExecStartPre=-/usr/bin/docker rm ceph-rgw-cephqa07-${INST_NAME}
+
+ExecStart=/usr/bin/docker run --rm --net=host \
+  --memory=257638m \
+  --cpu-quota=800000 \
+  -v /var/lib/ceph:/var/lib/ceph:z \
+  -v /etc/ceph:/etc/ceph:z \
+  -v /var/run/ceph:/var/run/ceph:z \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /var/log/ceph:/var/log/ceph:z \
+  -e CEPH_DAEMON=RGW \
+  -e CLUSTER=ceph \
+  -e RGW_NAME=cephqa07.${INST_NAME} \
+  -e RGW_CIVETWEB_PORT=${INST_PORT} \
+  -e CONTAINER_IMAGE=ceph/daemon:latest-nautilus \
+  --name=ceph-rgw-cephqa07-${INST_NAME} \
+   \
+  ceph/daemon:latest-nautilus
+
+ExecStopPost=-/usr/bin/docker stop ceph-rgw-cephqa07-${INST_NAME}
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

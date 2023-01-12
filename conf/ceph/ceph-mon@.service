@@ -1,0 +1,35 @@
+[Unit]
+Description=Ceph cluster monitor daemon
+After=docker.service
+
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStartPre=-/usr/bin/docker rm ceph-mon-%i
+ExecStartPre=/bin/sh -c '"$(command -v mkdir)" -p /etc/ceph /var/lib/ceph/mon'
+ExecStart=/usr/bin/docker run --rm --name ceph-mon-%i \
+--memory=257638m \
+--cpu-quota=100000 \
+-v /var/lib/ceph:/var/lib/ceph:z \
+-v /etc/ceph:/etc/ceph:z \
+-v /var/run/ceph:/var/run/ceph:z \
+-v /etc/localtime:/etc/localtime:ro \
+-v /var/log/ceph:/var/log/ceph:z \
+--net=host \
+-e IP_VERSION=4 \
+-e MON_IP=192.168.122.1 \
+-e CLUSTER=ceph \
+-e FSID=3e4190b5-56d9-4c92-8b2c-27c769918204 \
+-e MON_PORT=3300 \
+-e CEPH_PUBLIC_NETWORK=192.168.122.1/26 \
+-e CEPH_DAEMON=MON \
+-e CONTAINER_IMAGE=ceph/daemon:latest-nautilus \
+ceph/daemon:latest-nautilus
+ExecStop=-/usr/bin/docker stop ceph-mon-%i
+ExecStopPost=-/bin/rm -f /var/run/ceph/ceph-mon.node01.asok
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+
+[Install]
+WantedBy=ceph-mon.target

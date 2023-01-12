@@ -1,0 +1,32 @@
+[Unit]
+Description=Ceph cluster manager daemon
+After=network-online.target local-fs.target time-sync.target
+Wants=network-online.target local-fs.target time-sync.target
+PartOf=ceph-mgr.target
+
+[Service]
+EnvironmentFile=-/etc/environment
+ExecStartPre=-/usr/bin/docker stop ceph-mgr-node01
+ExecStartPre=-/usr/bin/docker rm ceph-mgr-node01
+ExecStart=/usr/bin/docker run --rm --net=host \
+  --memory=257638m \
+  --cpu-quota=100000 \
+  -v /var/lib/ceph:/var/lib/ceph:z \
+  -v /etc/ceph:/etc/ceph:z \
+  -v /var/run/ceph:/var/run/ceph:z \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /var/log/ceph:/var/log/ceph:z \
+  -e CLUSTER=ceph \
+  -e CEPH_DAEMON=MGR \
+  -e CONTAINER_IMAGE=ceph/daemon:latest-nautilus \
+  --name=ceph-mgr-node01 \
+  ceph/daemon:latest-nautilus 
+
+ExecStopPost=-/usr/bin/docker stop ceph-mgr-node01
+Restart=always
+RestartSec=10s
+TimeoutStartSec=120
+TimeoutStopSec=15
+
+[Install]
+WantedBy=ceph-mgr.target
